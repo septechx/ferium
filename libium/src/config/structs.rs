@@ -66,19 +66,36 @@ impl Profile {
         name: String,
         output_dir: PathBuf,
         game_versions: Vec<String>,
-        mod_loader: ModLoader,
+        mod_loaders: Vec<ModLoader>,
     ) -> Self {
         Self {
             name,
             output_dir,
             filters: vec![
-                Filter::ModLoaderPrefer(match mod_loader {
-                    ModLoader::Quilt => vec![ModLoader::Quilt, ModLoader::Fabric],
-                    _ => vec![mod_loader],
-                }),
+                Filter::ModLoaderPrefer(mod_loaders),
                 Filter::GameVersionStrict(game_versions),
             ],
             mods: vec![],
+            game_version: None,
+            mod_loader: None,
+        }
+    }
+
+    pub fn new_with_mods(
+        name: String,
+        output_dir: PathBuf,
+        game_versions: Vec<String>,
+        mod_loaders: Vec<ModLoader>,
+        mods: Vec<Mod>,
+    ) -> Self {
+        Self {
+            name,
+            output_dir,
+            mods,
+            filters: vec![
+                Filter::ModLoaderPrefer(mod_loaders),
+                Filter::GameVersionStrict(game_versions),
+            ],
             game_version: None,
             mod_loader: None,
         }
