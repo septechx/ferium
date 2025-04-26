@@ -12,8 +12,8 @@ use octocrab::models::{repos::Release, Repository};
 use tokio::task::JoinSet;
 
 enum Metadata {
-    CF(Mod),
-    MD(Project, Vec<TeamMember>),
+    CF(Box<Mod>),
+    MD(Box<Project>, Vec<TeamMember>),
     GH(Box<Repository>, Vec<Release>),
 }
 impl Metadata {
@@ -74,14 +74,14 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
         vec![]
     } else {
         MODRINTH_API
-            .get_multiple_projects(&mr_ids.iter().map(AsRef::as_ref).collect_vec())
+            .project_get_multiple(&mr_ids.iter().map(AsRef::as_ref).collect_vec())
             .await?
     };
     let mr_teams_members = if mr_projects.is_empty() {
         vec![]
     } else {
         MODRINTH_API
-            .list_multiple_teams_members(&mr_projects.iter().map(|p| p.team.as_ref()).collect_vec())
+            .team_multiple_list_members(&mr_projects.iter().map(|p| p.team.as_ref()).collect_vec())
             .await?
     };
 
@@ -93,10 +93,10 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
 
     let mut metadata = Vec::new();
     for (project, members) in mr_projects.into_iter().zip(mr_teams_members) {
-        metadata.push(Metadata::MD(project, members));
+        metadata.push(Metadata::MD(Box::new(project), members));
     }
     for project in cf_projects {
-        metadata.push(Metadata::CF(project));
+        metadata.push(Metadata::CF(Box::new(project)));
     }
     for res in tasks.join_all().await {
         let (repo, releases) = res?;
