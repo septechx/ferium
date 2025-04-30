@@ -53,6 +53,8 @@ pub struct Profile {
 
     pub mods: Vec<Mod>,
 
+    pub disabled: Vec<Mod>,
+
     // Kept for backwards compatibility reasons (i.e. migrating from a v4 config)
     #[serde(skip_serializing)]
     game_version: Option<String>,
@@ -76,22 +78,25 @@ impl Profile {
                 Filter::GameVersionStrict(game_versions),
             ],
             mods: vec![],
+            disabled: vec![],
             game_version: None,
             mod_loader: None,
         }
     }
 
-    pub fn new_with_mods(
+    pub fn new_complete(
         name: String,
         output_dir: PathBuf,
         game_versions: Vec<String>,
         mod_loaders: Vec<ModLoader>,
         mods: Vec<Mod>,
+        disabled: Vec<Mod>,
     ) -> Self {
         Self {
             name,
             output_dir,
             mods,
+            disabled,
             filters: vec![
                 Filter::ModLoaderPrefer(mod_loaders),
                 Filter::GameVersionStrict(game_versions),
@@ -187,6 +192,7 @@ impl Mod {
     }
 }
 
+// Wtf. This isn't even used
 const fn is_false(b: &bool) -> bool {
     !*b
 }
