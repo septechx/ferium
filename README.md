@@ -1,3 +1,4 @@
+# This repo exists for ferrite's libium fork, ferium won't work with it
 # Ferium
 
 [![rust badge](https://img.shields.io/static/v1?label=Made%20with&message=Rust&logo=rust&labelColor=e82833&color=b11522)](https://www.rust-lang.org)
@@ -123,7 +124,7 @@ xbps-install ferium
 #### [crates.io](https://crates.io) using the _Rust toolchain_
 [![crates.io](https://repology.org/badge/version-for-repo/crates_io/rust:ferium.svg)](https://crates.io/crates/ferium)
 ```bash
-cargo install ferium
+cargo install --locked ferium
 ```
 > [!TIP]
 > Use a tool like [cargo-update](https://crates.io/crates/cargo-update) to keep ferium updated to the latest version!
