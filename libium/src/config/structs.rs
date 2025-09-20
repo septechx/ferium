@@ -216,6 +216,7 @@ pub enum ModLoader {
     Forge,
     #[clap(name = "neoforge")]
     NeoForge,
+    Velocity,
 }
 
 #[derive(thiserror::Error, Debug, PartialEq, Eq)]
@@ -232,6 +233,7 @@ impl FromStr for ModLoader {
             "fabric" => Ok(Self::Fabric),
             "forge" => Ok(Self::Forge),
             "neoforge" => Ok(Self::NeoForge),
+            "velocity" => Ok(Self::Velocity),
             _ => Err(Self::Err {}),
         }
     }
