@@ -116,16 +116,13 @@ pub async fn add(
 
     for id in identifiers {
         match id {
-            ModIdentifier::CurseForgeProject(id) => cf_ids.push(id),
-            ModIdentifier::ModrinthProject(id) => mr_ids.push(id),
-            ModIdentifier::GitHubRepository(o, r) => gh_ids.push((o, r)),
-
-            ModIdentifier::PinnedCurseForgeProject(mod_id, file_id) => {
-                let project = CURSEFORGE_API.get_mod(mod_id).await?;
-                let file = CURSEFORGE_API.get_mod_file(mod_id, file_id).await?;
+            ModIdentifier::CurseForgeProject(id)
+            | ModIdentifier::PinnedCurseForgeProject(id, _) => cf_ids.push(id),
+            ModIdentifier::ModrinthProject(id) | ModIdentifier::PinnedModrinthProject(id, _) => {
+                mr_ids.push(id)
             }
-            ModIdentifier::PinnedModrinthProject(project_id, version_id) => todo!(),
-            ModIdentifier::PinnedGitHubRepository((owner, repo), asset_id) => todo!(),
+            ModIdentifier::GitHubRepository(o, r)
+            | ModIdentifier::PinnedGitHubRepository((o, r), _) => gh_ids.push((o, r)),
         }
     }
 
