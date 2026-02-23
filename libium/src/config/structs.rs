@@ -209,6 +209,22 @@ pub enum ModIdentifier {
     PinnedGitHubRepository((String, String), i32),
 }
 
+impl ModIdentifier {
+    pub fn display_name(&self) -> String {
+        match self {
+            ModIdentifier::CurseForgeProject(id)
+            | ModIdentifier::PinnedCurseForgeProject(id, _) => id.to_string(),
+            ModIdentifier::ModrinthProject(id) | ModIdentifier::PinnedModrinthProject(id, _) => {
+                id.clone()
+            }
+            ModIdentifier::GitHubRepository(user, repo)
+            | ModIdentifier::PinnedGitHubRepository((user, repo), _) => {
+                format!("{user}/{repo}")
+            }
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Display, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum ModLoader {
     Quilt,
