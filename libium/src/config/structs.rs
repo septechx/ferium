@@ -197,7 +197,6 @@ const fn is_false(b: &bool) -> bool {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
-#[serde(untagged)]
 pub enum ConfigModIdentifier {
     CurseForgeProject(i32),
     ModrinthProject(String),
