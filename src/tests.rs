@@ -6,7 +6,7 @@ use crate::{
 };
 use libium::config::structs::ModLoader;
 use std::{
-    assert_matches::assert_matches,
+    assert_matches,
     env::current_dir,
     fs::{copy, create_dir_all},
     path::PathBuf,
@@ -26,7 +26,7 @@ fn get_args(subcommand: SubCommands, config_file: Option<&str>) -> Ferium {
         .join("tests")
         .join("configs")
         .join("running")
-        .join(format!("{:X}.json", rand::random::<usize>()));
+        .join(format!("{:X}.json", rand::random::<u32>()));
     let _ = create_dir_all(running.parent().unwrap());
     if let Some(config_file) = config_file {
         copy(format!("./tests/configs/{config_file}.json"), &running).unwrap();
@@ -152,7 +152,6 @@ async fn add_modrinth() {
             SubCommands::Add {
                 identifiers: vec!["starlight".to_owned()],
                 force: false,
-                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("empty_profile"),
@@ -169,7 +168,6 @@ async fn add_curseforge() {
             SubCommands::Add {
                 identifiers: vec!["591388".to_owned()],
                 force: false,
-                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("empty_profile"),
@@ -186,7 +184,6 @@ async fn add_github() {
             SubCommands::Add {
                 identifiers: vec!["CaffeineMC/sodium".to_owned()],
                 force: false,
-                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("empty_profile"),
@@ -207,7 +204,6 @@ async fn add_all() {
                     "CaffeineMC/sodium".to_owned()
                 ],
                 force: false,
-                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("empty_profile"),
@@ -228,13 +224,52 @@ async fn already_added() {
                     "CaffeineMC/sodium".to_owned()
                 ],
                 force: false,
-                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("one_profile_full"),
         ))
         .await,
         Ok(()),
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn add_all_pinned() {
+    assert_matches!(
+        actual_main(get_args(
+            SubCommands::Add {
+                identifiers: vec![
+                    "starlight:HZYU0kdg".to_owned(),
+                    "591388:6713391".to_owned(),
+                    "CaffeineMC/sodium:RA_kwDODijHac4Kh-Lc".to_owned()
+                ],
+                force: false,
+                filters: FilterArguments::default(),
+            },
+            Some("empty_profile"),
+        ))
+        .await,
+        Ok(()),
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn add_all_invalid_pins() {
+    assert_matches!(
+        actual_main(get_args(
+            SubCommands::Add {
+                identifiers: vec![
+                    "starlight:ihzX2Dvy".to_owned(),
+                    "591388:4947005".to_owned(),
+                    "CaffeineMC/sodium:kwDODijHac4Kh".to_owned()
+                ],
+                force: false,
+                filters: FilterArguments::default(),
+            },
+            Some("empty_profile"),
+        ))
+        .await,
+        Err(_),
     );
 }
 

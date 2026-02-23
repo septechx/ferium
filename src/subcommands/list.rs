@@ -11,36 +11,37 @@ use libium::{
 use octocrab::models::{repos::Release, Repository};
 use tokio::task::JoinSet;
 
-enum Metadata {
+enum ListData {
     CF(Box<Mod>),
     MD(Box<Project>, Vec<TeamMember>),
     GH(Box<Repository>, Vec<Release>),
 }
-impl Metadata {
+impl ListData {
     fn name(&self) -> &str {
         match self {
-            Metadata::CF(p) => &p.name,
-            Metadata::MD(p, _) => &p.title,
-            Metadata::GH(p, _) => &p.name,
+            ListData::CF(p) => &p.name,
+            ListData::MD(p, _) => &p.title,
+            ListData::GH(p, _) => &p.name,
         }
     }
 
     #[expect(clippy::unwrap_used)]
     fn id(&self) -> ModIdentifier {
         match self {
-            Metadata::CF(p) => ModIdentifier::CurseForgeProject(p.id),
-            Metadata::MD(p, _) => ModIdentifier::ModrinthProject(p.id.clone()),
-            Metadata::GH(p, _) => {
-                ModIdentifier::GitHubRepository(p.owner.clone().unwrap().login, p.name.clone())
-            }
+            ListData::CF(p) => ModIdentifier::CurseForgeProject(p.id, None),
+            ListData::MD(p, _) => ModIdentifier::ModrinthProject(p.id.clone(), None),
+            ListData::GH(p, _) => ModIdentifier::GitHubRepository(
+                (p.owner.clone().unwrap().login, p.name.clone()),
+                None,
+            ),
         }
     }
 
     fn slug(&self) -> &str {
         match self {
-            Metadata::CF(p) => &p.slug,
-            Metadata::MD(p, _) => &p.slug,
-            Metadata::GH(p, _) => &p.name,
+            ListData::CF(p) => &p.slug,
+            ListData::MD(p, _) => &p.slug,
+            ListData::GH(p, _) => &p.name,
         }
     }
 }
@@ -55,9 +56,9 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
     let mut cf_ids = Vec::new();
     for mod_ in &profile.mods {
         match mod_.identifier.clone() {
-            ModIdentifier::CurseForgeProject(project_id) => cf_ids.push(project_id),
-            ModIdentifier::ModrinthProject(project_id) => mr_ids.push(project_id),
-            ModIdentifier::GitHubRepository(owner, repo) => {
+            ModIdentifier::CurseForgeProject(project_id, _) => cf_ids.push(project_id),
+            ModIdentifier::ModrinthProject(project_id, _) => mr_ids.push(project_id),
+            ModIdentifier::GitHubRepository((owner, repo), _) => {
                 let repo = GITHUB_API.repos(owner, repo);
                 tasks.spawn(async move {
                     Ok::<_, anyhow::Error>((
@@ -66,7 +67,6 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
                     ))
                 });
             }
-            _ => todo!(),
         }
     }
 
@@ -93,14 +93,14 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
 
     let mut metadata = Vec::new();
     for (project, members) in mr_projects.into_iter().zip(mr_teams_members) {
-        metadata.push(Metadata::MD(Box::new(project), members));
+        metadata.push(ListData::MD(Box::new(project), members));
     }
     for project in cf_projects {
-        metadata.push(Metadata::CF(Box::new(project)));
+        metadata.push(ListData::CF(Box::new(project)));
     }
     for res in tasks.join_all().await {
         let (repo, releases) = res?;
-        metadata.push(Metadata::GH(Box::new(repo), releases.items));
+        metadata.push(ListData::GH(Box::new(repo), releases.items));
     }
     metadata.sort_unstable_by_key(|e| e.name().to_lowercase());
 
@@ -120,15 +120,15 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
 
         if markdown {
             match project {
-                Metadata::CF(p) => curseforge_md(p),
-                Metadata::MD(p, t) => modrinth_md(p, t),
-                Metadata::GH(p, _) => github_md(p),
+                ListData::CF(p) => curseforge_md(p),
+                ListData::MD(p, t) => modrinth_md(p, t),
+                ListData::GH(p, _) => github_md(p),
             }
         } else {
             match project {
-                Metadata::CF(p) => curseforge(p),
-                Metadata::MD(p, t) => modrinth(p, t),
-                Metadata::GH(p, r) => github(p, r),
+                ListData::CF(p) => curseforge(p),
+                ListData::MD(p, t) => modrinth(p, t),
+                ListData::GH(p, r) => github(p, r),
             }
         }
     }
@@ -168,14 +168,14 @@ pub fn curseforge(project: &Mod) {
             .iter()
             .map(|author| &author.name)
             .display(", ")
-            .to_string()
+            .clone()
             .cyan(),
         project
             .categories
             .iter()
             .map(|category| &category.name)
             .display(", ")
-            .to_string()
+            .clone()
             .magenta(),
     );
 }
@@ -208,14 +208,9 @@ pub fn modrinth(project: &Project, team_members: &[TeamMember]) {
             .iter()
             .map(|member| &member.user.username)
             .display(", ")
-            .to_string()
+            .clone()
             .cyan(),
-        project
-            .categories
-            .iter()
-            .display(", ")
-            .to_string()
-            .magenta(),
+        project.categories.iter().display(", ").clone().magenta(),
         {
             if project.license.name.is_empty() {
                 "Custom"
@@ -271,7 +266,7 @@ pub fn github(repo: &Repository, releases: &[Release]) {
         repo.topics.as_ref().map_or("".into(), |topics| topics
             .iter()
             .display(", ")
-            .to_string()
+            .clone()
             .magenta()),
         repo.license
             .as_ref()
